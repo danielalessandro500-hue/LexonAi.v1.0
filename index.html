@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat IA de Gemini con n8n</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f4f4f9; }
+        #chat-box { border: 1px solid #ccc; height: 400px; padding: 10px; overflow-y: scroll; margin-bottom: 10px; background: white; border-radius: 8px; }
+        .user-message { text-align: right; color: blue; }
+        .ai-message { text-align: left; color: green; }
+        input[type="text"] { width: calc(100% - 70px); padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { width: 60px; padding: 10px; background-color: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>🤖 Asistente de IA (Powered by n8n & Gemini)</h2>
+    <div id="chat-box"></div>
+    <input type="text" id="user-input" placeholder="Escribe tu mensaje...">
+    <button onclick="sendMessage()">Enviar</button>
+
+    <script>
+               const WEBHOOK_URL = 'https://ehnh6.app.n8n.cloud/webhook-test/a2ceddb7-97e8-4b77-9c5e-823ec3704ada'; 
+
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+
+        function appendMessage(sender, message) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = sender === 'user' ? 'user-message' : 'ai-message';
+            msgDiv.textContent = message;
+            chatBox.appendChild(msgDiv);
+            // Hacer scroll al final
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (message === '') return;
+
+            appendMessage('user', 'Tú: ' + message);
+            userInput.value = '';
+
+            try {
+                // Notificar que la IA está pensando
+                appendMessage('ai', 'IA: ...Pensando...');
+
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    // Enviamos el mensaje en formato JSON que n8n espera
+                    body: JSON.stringify({ message: message }) 
+                });
+
+                const data = await response.json();
+
+                // Eliminar el mensaje de "Pensando..."
+                chatBox.removeChild(chatBox.lastChild); 
+
+                // Mostrar la respuesta final de la IA
+                appendMessage('ai', 'IA: ' + data.output);
+
+            } catch (error) {
+                console.error('Error al enviar mensaje:', error);
+                appendMessage('ai', 'IA: Lo siento, hubo un error de conexión.');
+            }
+        }
+    </script>
+
+</body>
+</html>
